@@ -4,49 +4,55 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strings"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/models"
-	userRepository "udemy/build-jwt-authenticated-restful-apis-with-golang/repository/user"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/utils"
+
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/models"
+	userRepository "github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/repository/user"
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Controller struct{}
 
 func (c Controller) SignUpHandler(db *sql.DB) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Sign-up reached...")
 		var user models.User
-		var error models.Error
+		var signUpErr models.Error
 		var userRepo userRepository.User
 
-		json.NewDecoder(r.Body).Decode(&user)
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			signUpErr.Message = "Bad signup request!"
+			utils.RespondWithError(w, http.StatusBadRequest, signUpErr)
+			return
+		}
 
 		if strings.TrimSpace(user.Email) == "" {
-			error.Message = "Email is missing!"
-			utils.RespondWithError(w, http.StatusBadRequest, error)
+			signUpErr.Message = "Email is missing!"
+			utils.RespondWithError(w, http.StatusBadRequest, signUpErr)
 			return
 		}
 
 		if strings.TrimSpace(user.Password) == "" {
-			error.Message = "Password is missing!"
-			utils.RespondWithError(w, http.StatusBadRequest, error)
+			signUpErr.Message = "Password is missing!"
+			utils.RespondWithError(w, http.StatusBadRequest, signUpErr)
 			return
 		}
 
 		hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 		if err != nil {
-			error.Message = err.Error()
-			utils.RespondWithError(w, http.StatusInternalServerError, error)
+			signUpErr.Message = err.Error()
+			utils.RespondWithError(w, http.StatusInternalServerError, signUpErr)
 			return
 		}
 
 		user.Password = string(hash)
 		err = userRepo.CreateUser(db, &user)
 		if err != nil {
-			error.Message = err.Error()
-			utils.RespondWithError(w, http.StatusInternalServerError, error)
+			signUpErr.Message = err.Error()
+			utils.RespondWithError(w, http.StatusInternalServerError, signUpErr)
 			return
 		}
 
@@ -57,53 +63,48 @@ func (c Controller) SignUpHandler(db *sql.DB) http.HandlerFunc {
 			ID:    user.ID,
 			Email: user.Email,
 		})
-
-		//stmt := "SELECT * FROM users WHERE email = $1;"
-		//queryErr := db.QueryRow(stmt, user.Email).Scan(&user.ID, &user.Email, &user.Password)
-		//if queryErr != nil {
-		//	error.Message = queryErr.Error()
-		//	utils.RespondWithError(w, http.StatusInternalServerError, error)
-		//	return
-		//}
-		//
-		//utils.ResponseJson(w, http.StatusOK, user)
 	}
 }
 
 func (c Controller) LoginHandler(db *sql.DB) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Login reached...")
 
 		var jwt models.JWT
 		var user models.User
-		var err models.Error
+		var loginErr models.Error
 		var userRepo userRepository.User
 
-		json.NewDecoder(r.Body).Decode(&user)
-		inputPwd := user.Password
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			loginErr.Message = "Bad login request!"
+			utils.RespondWithError(w, http.StatusBadRequest, loginErr)
+			return
+		}
 
+		inputPwd := user.Password
 		hashedDbPwd, userErr := userRepo.GetPasswordByEmail(db, user.Email)
 		if userErr == sql.ErrNoRows {
-			err.Message = "Email doesn't exist"
-			utils.RespondWithError(w, http.StatusBadRequest, err)
+			loginErr.Message = "Email doesn't exist"
+			utils.RespondWithError(w, http.StatusBadRequest, loginErr)
 			return
 		} else if userErr != nil {
-			err.Message = "Database connection error"
-			utils.RespondWithError(w, http.StatusInternalServerError, err)
+			loginErr.Message = "Database connection error"
+			utils.RespondWithError(w, http.StatusInternalServerError, loginErr)
 			return
 		}
 
 		pwdErr := bcrypt.CompareHashAndPassword([]byte(hashedDbPwd), []byte(inputPwd))
 		if pwdErr != nil {
-			err.Message = "Incorrect password"
-			utils.RespondWithError(w, http.StatusBadRequest, err)
+			loginErr.Message = "Incorrect password"
+			utils.RespondWithError(w, http.StatusBadRequest, loginErr)
 			return
 		}
 
 		tokenString, tErr := utils.GenerateToken(user)
 		if tErr != nil {
-			err.Message = tErr.Error()
-			utils.RespondWithError(w, http.StatusInternalServerError, err)
+			loginErr.Message = tErr.Error()
+			utils.RespondWithError(w, http.StatusInternalServerError, loginErr)
 			return
 		}
 		jwt.Token = tokenString

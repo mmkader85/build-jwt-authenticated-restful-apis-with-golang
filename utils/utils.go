@@ -3,31 +3,32 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/models"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/models"
 )
 
 func RespondWithError(w http.ResponseWriter, status int, err models.Error) {
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(err)
+	_ = json.NewEncoder(w).Encode(err)
 }
 
 func ResponseJson(w http.ResponseWriter, status int, output interface{}) {
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(output)
+	_ = json.NewEncoder(w).Encode(output)
 }
 
 func GenerateToken(user models.User) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email" : user.Email,
-		"iss"   : "course",
-		"exp"   : time.Now().Add(time.Hour * 6).Unix(),
+		"email": user.Email,
+		"iss":   "course",
+		"exp":   time.Now().Add(time.Hour * 6).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(secret))
@@ -65,7 +66,7 @@ func TokenVerifyMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			if token.Valid {
 				next.ServeHTTP(w, r)
 			} else {
-				errorObject.Message = err.Error()
+				errorObject.Message = "Invalid Token"
 				RespondWithError(w, http.StatusUnauthorized, errorObject)
 				return
 			}

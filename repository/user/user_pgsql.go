@@ -2,10 +2,11 @@ package userRepository
 
 import (
 	"database/sql"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/models"
+
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/models"
 )
 
-type User struct {}
+type User struct{}
 
 func (User) CreateUser(db *sql.DB, user *models.User) error {
 	stmt := "INSERT INTO users(email, password) values ($1, $2) RETURNING id;"

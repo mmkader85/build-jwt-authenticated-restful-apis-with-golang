@@ -3,25 +3,24 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/controllers"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/driver"
-	"udemy/build-jwt-authenticated-restful-apis-with-golang/utils"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/controllers"
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/driver"
+	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/utils"
 )
 
 var db *sql.DB
 
-func init() {
+func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env.dist file")
+		log.Fatal("Error loading .env file")
 	}
-}
 
-func main() {
 	db = driver.ConnectDB()
 	controller := controllers.Controller{}
 
