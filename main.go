@@ -11,6 +11,8 @@ import (
 	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/controllers"
 	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/driver"
 	"github.com/mmkader85/build-jwt-authenticated-restful-apis-with-golang/utils"
+
+	_ "github.com/lib/pq"
 )
 
 var db *sql.DB

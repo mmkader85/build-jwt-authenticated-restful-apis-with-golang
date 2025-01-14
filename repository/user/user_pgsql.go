@@ -20,7 +20,7 @@ func (User) CreateUser(db *sql.DB, user *models.User) error {
 
 func (User) GetPasswordByEmail(db *sql.DB, email string) (string, error) {
 	var pwd string
-	stmt := "SELECT Password FROM users WHERE Email = $1;"
+	stmt := "SELECT password FROM users WHERE email = $1;"
 	err := db.QueryRow(stmt, email).Scan(&pwd)
 	if err != nil {
 		return "", err
